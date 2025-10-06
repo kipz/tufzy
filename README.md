@@ -60,34 +60,55 @@ tufzy info https://jku.github.io/tuf-demo/metadata
 tufzy delegations https://jku.github.io/tuf-demo/metadata
 ```
 
-### Auto-Detection Features
+### Auto-Detection
 
-tufzy automatically detects:
+tufzy automatically detects repository configuration with **zero manual flags**:
 
+#### What gets auto-detected:
+- **Repository type**: Local filesystem vs remote HTTP(S)
+- **tuf-on-ci git layout**: Checks for unversioned metadata files (`timestamp.json`, `snapshot.json`, `targets.json`)
 - **Hash-prefixed targets**: Based on `consistent_snapshot` field in root metadata
-- **Local vs remote**: Based on path format (absolute, relative, or URL)
-- **tuf-on-ci git layout**: Detects `root_history/` directory for local repositories
+- **Hash prefix override**: Disabled for tuf-on-ci git repos (source files don't have prefixes)
 
-No manual flags needed! Just point tufzy at any TUF repository and it figures out the layout.
+#### How it works:
 
-### Using with tuf-on-ci repositories
+**For standard TUF repositories**:
+- Reads `consistent_snapshot` from root metadata
+- If `true`: expects hash-prefixed targets (`{sha256}.filename`)
+- If `false`: expects plain filenames
 
-Both published and unpublished tuf-on-ci repositories work automatically:
+**For tuf-on-ci git repositories** (local checkouts):
+- Detects unversioned metadata files in directory
+- Automatically maps versioned requests to unversioned files:
+  - `N.root.json` (N > 1) → `root_history/N.root.json`
+  - `N.snapshot.json` → `snapshot.json`
+  - `N.timestamp.json` → `timestamp.json`
+  - `N.targets.json` → `targets.json`
+- Forces hash prefixes OFF (git source files don't have them)
+
+**For tuf-on-ci published repositories** (GitHub Pages):
+- Works like standard TUF (has versioned files and hash prefixes)
+
+### Using with any TUF repository
+
+Just point tufzy at the metadata URL or path - no flags needed:
 
 ```bash
-# Published repository (GitHub Pages)
+# Remote standard TUF
+tufzy list https://jku.github.io/tuf-demo/metadata
+
+# Remote tuf-on-ci (published)
 tufzy list https://example.github.io/repo/metadata
 
-# Local git checkout (auto-detects unversioned layout)
+# Local tuf-on-ci git checkout
 tufzy list /path/to/tuf-on-ci-repo/metadata
-tufzy info ./metadata
-```
+tufzy list ./metadata
 
-When tufzy detects a local repository with `root_history/` directory, it automatically maps:
-- `N.root.json` (N > 1) → `root_history/N.root.json`
-- `N.snapshot.json` → `snapshot.json` (current version)
-- `N.timestamp.json` → `timestamp.json` (current version)
-- `N.targets.json` → `targets.json` (current version)
+# All commands work the same way
+tufzy info <url-or-path>
+tufzy delegations <url-or-path>
+tufzy get <url-or-path> <target-file>
+```
 
 ## Example Output
 
@@ -98,6 +119,7 @@ $ tufzy list https://jku.github.io/tuf-demo/metadata
 ✅ TUF Repository
 📍 Metadata: https://jku.github.io/tuf-demo/metadata
 📦 Targets:  https://jku.github.io/tuf-demo/targets
+🔍 Detected: consistent_snapshot (hash prefixes enabled)
 
 🎯 Targets (1)
 
@@ -116,11 +138,31 @@ URLs:
   Metadata: https://jku.github.io/tuf-demo/metadata
   Targets:  https://jku.github.io/tuf-demo/targets
 
+🔍 Auto-detected:
+  Layout: standard TUF
+  Hash prefixes: enabled (consistent_snapshot=true)
+
 ⏰ Metadata Expiry:
   ✅ Root:      v4   expires 2026-02-03 (expires in 3 months)
   ✅ Targets:   v6   expires 2026-03-21 (expires in 5 months)
   ✅ Snapshot:  v14  expires 2026-04-08 (expires in 6 months)
   ⚠️ Timestamp: v642 expires 2025-10-08 (expires in 1 days)
+```
+
+### Local tuf-on-ci Git Repository
+```
+$ tufzy list ./metadata
+
+✅ TUF Repository 📝 tuf-on-ci git
+📍 Metadata: file:///path/to/repo/metadata
+📦 Targets:  file:///path/to/repo/targets
+🔍 Detected: tuf-on-ci git layout
+
+🎯 Targets (1)
+
+  Name                  Size        SHA256
+  ────────────────────────────────────────────────────
+  policies.json         41.9 KB     3366323162663364...
 ```
 
 ### Delegations Command
@@ -151,6 +193,8 @@ $ tufzy get https://jku.github.io/tuf-demo/metadata rdimitrov/artifact-example.m
 
 tufzy uses the [go-tuf v2](https://github.com/theupdateframework/go-tuf) library to interact with TUF repositories. On first run, it downloads and caches the root.json file (TOFU), then uses it to verify all subsequent metadata and target files according to the TUF specification.
 
+Each repository gets its own isolated cache directory (based on URL hash) in `~/.tufzy/cache/`, preventing conflicts when working with multiple repositories.
+
 ## Known Limitations
 
 Due to go-tuf v2 implementation details, tufzy requires:
@@ -172,8 +216,8 @@ Due to go-tuf v2 implementation details, tufzy requires:
 - Repositories with hex-encoded raw EC public keys (not PEM)
 
 **Example working repositories**:
-- Remote: https://jku.github.io/tuf-demo/metadata
-- Local tuf-on-ci git: Use `--tuf-on-ci-git` flag
+- Remote standard TUF: https://jku.github.io/tuf-demo/metadata
+- Local tuf-on-ci git: Any local checkout with `metadata/` directory
 
 ## Development
 
