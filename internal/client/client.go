@@ -1,6 +1,8 @@
 package client
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -16,10 +18,13 @@ import (
 
 // Client wraps the TUF updater with convenience methods
 type Client struct {
-	updater     *updater.Updater
-	metadataURL string
-	targetsURL  string
-	cacheDir    string
+	updater            *updater.Updater
+	metadataURL        string
+	targetsURL         string
+	cacheDir           string
+	tufOnCiGit         bool
+	consistentSnapshot bool
+	hashPrefixes       bool
 }
 
 // TargetInfo contains information about a target file
@@ -33,16 +38,19 @@ type TargetInfo struct {
 
 // RepositoryInfo contains metadata about the repository
 type RepositoryInfo struct {
-	RootVersion      int64
-	RootExpires      time.Time
-	TargetsVersion   int64
-	TargetsExpires   time.Time
-	SnapshotVersion  int64
-	SnapshotExpires  time.Time
-	TimestampVersion int64
-	TimestampExpires time.Time
-	MetadataURL      string
-	TargetsURL       string
+	RootVersion        int64
+	RootExpires        time.Time
+	TargetsVersion     int64
+	TargetsExpires     time.Time
+	SnapshotVersion    int64
+	SnapshotExpires    time.Time
+	TimestampVersion   int64
+	TimestampExpires   time.Time
+	MetadataURL        string
+	TargetsURL         string
+	TufOnCiGit         bool
+	ConsistentSnapshot bool
+	HashPrefixes       bool
 }
 
 // Delegation represents a delegated role
@@ -69,12 +77,16 @@ type ClientOptions struct {
 
 // NewClientWithOptions creates a new TUF client with custom options
 func NewClientWithOptions(metadataURL string, options ClientOptions) (*Client, error) {
-	// Determine cache directory
+	// Determine cache directory (unique per repository URL)
 	homeDir, err := os.UserHomeDir()
 	if err != nil {
 		return nil, fmt.Errorf("failed to get home directory: %w", err)
 	}
-	cacheDir := filepath.Join(homeDir, ".tufzy", "cache")
+
+	// Create unique cache directory based on metadata URL hash
+	urlHash := sha256.Sum256([]byte(metadataURL))
+	cacheID := hex.EncodeToString(urlHash[:8]) // Use first 8 bytes for shorter path
+	cacheDir := filepath.Join(homeDir, ".tufzy", "cache", cacheID)
 
 	// Create cache directory
 	if err := os.MkdirAll(cacheDir, 0755); err != nil {
@@ -146,6 +158,48 @@ func NewClientWithOptions(metadataURL string, options ClientOptions) (*Client, e
 		return nil, fmt.Errorf("failed to read trusted root: %w", err)
 	}
 
+	// Parse root to detect consistent_snapshot setting
+	var rootData struct {
+		Signed struct {
+			ConsistentSnapshot bool `json:"consistent_snapshot"`
+		} `json:"signed"`
+	}
+	if err := json.Unmarshal(rootBytes, &rootData); err != nil {
+		return nil, fmt.Errorf("failed to parse root metadata: %w", err)
+	}
+
+	// Auto-detect tuf-on-ci git layout for local repositories
+	// Check if unversioned metadata files exist (timestamp.json, snapshot.json, targets.json)
+	// This indicates tuf-on-ci git layout vs standard TUF (which has N.snapshot.json, etc)
+	tufOnCiGit := false
+	if isLocal {
+		timestampPath := filepath.Join(absPath, "timestamp.json")
+		snapshotPath := filepath.Join(absPath, "snapshot.json")
+		targetsPath := filepath.Join(absPath, "targets.json")
+
+		// If all three unversioned files exist, it's tuf-on-ci git layout
+		_, tsErr := os.Stat(timestampPath)
+		_, snapErr := os.Stat(snapshotPath)
+		_, tgtErr := os.Stat(targetsPath)
+
+		if tsErr == nil && snapErr == nil && tgtErr == nil {
+			tufOnCiGit = true
+		}
+	}
+	// User can still override via options
+	if options.TufOnCiGit {
+		tufOnCiGit = true
+	}
+
+	// Auto-detect hash prefix from consistent_snapshot
+	// BUT: tuf-on-ci git repos don't use hash prefixes even when consistent_snapshot=true
+	// Only published tuf-on-ci repos use hash prefixes
+	prefixTargetsWithHash := rootData.Signed.ConsistentSnapshot
+	if tufOnCiGit {
+		// tuf-on-ci git layout never uses hash prefixes
+		prefixTargetsWithHash = false
+	}
+
 	// Create updater configuration
 	cfg, err := config.New(metadataURL, rootBytes)
 	if err != nil {
@@ -157,10 +211,10 @@ func NewClientWithOptions(metadataURL string, options ClientOptions) (*Client, e
 	cfg.LocalTargetsDir = filepath.Join(cacheDir, "targets")
 	cfg.RemoteTargetsURL = targetsURL
 	cfg.MaxRootRotations = 32
-	cfg.PrefixTargetsWithHash = options.PrefixTargetsWithHash
+	cfg.PrefixTargetsWithHash = prefixTargetsWithHash
 
 	// Use custom fetcher that supports file:// URLs and optionally tuf-on-ci git layout
-	if options.TufOnCiGit {
+	if tufOnCiGit {
 		cfg.Fetcher = NewTufOnCiFetcher(metadataURL)
 	} else {
 		cfg.Fetcher = NewFilesystemFetcher()
@@ -173,10 +227,13 @@ func NewClientWithOptions(metadataURL string, options ClientOptions) (*Client, e
 	}
 
 	return &Client{
-		updater:     tufUpdater,
-		metadataURL: metadataURL,
-		targetsURL:  targetsURL,
-		cacheDir:    cacheDir,
+		updater:            tufUpdater,
+		metadataURL:        metadataURL,
+		targetsURL:         targetsURL,
+		cacheDir:           cacheDir,
+		tufOnCiGit:         tufOnCiGit,
+		consistentSnapshot: rootData.Signed.ConsistentSnapshot,
+		hashPrefixes:       prefixTargetsWithHash,
 	}, nil
 }
 
@@ -213,8 +270,11 @@ func (c *Client) GetRepositoryInfo() (*RepositoryInfo, error) {
 	trusted := c.updater.GetTrustedMetadataSet()
 
 	info := &RepositoryInfo{
-		MetadataURL: c.metadataURL,
-		TargetsURL:  c.targetsURL,
+		MetadataURL:        c.metadataURL,
+		TargetsURL:         c.targetsURL,
+		TufOnCiGit:         c.tufOnCiGit,
+		ConsistentSnapshot: c.consistentSnapshot,
+		HashPrefixes:       c.hashPrefixes,
 	}
 
 	// Root info

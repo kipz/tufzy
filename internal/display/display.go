@@ -19,9 +19,24 @@ var (
 
 // ShowRepositoryHeader displays a brief repository header
 func ShowRepositoryHeader(info *client.RepositoryInfo) {
-	fmt.Printf("\n%s %s\n", green("✅"), bold("TUF Repository"))
+	fmt.Printf("\n%s %s", green("✅"), bold("TUF Repository"))
+	if info.TufOnCiGit {
+		fmt.Printf(" %s", yellow("📝 tuf-on-ci git"))
+	}
+	fmt.Printf("\n")
 	fmt.Printf("📍 Metadata: %s\n", cyan(info.MetadataURL))
-	fmt.Printf("📦 Targets:  %s\n\n", cyan(info.TargetsURL))
+	fmt.Printf("📦 Targets:  %s\n", cyan(info.TargetsURL))
+
+	// Show detected settings
+	fmt.Printf("🔍 Detected: ")
+	if info.TufOnCiGit {
+		fmt.Printf("tuf-on-ci git layout")
+	} else if info.HashPrefixes {
+		fmt.Printf("consistent_snapshot (hash prefixes enabled)")
+	} else {
+		fmt.Printf("standard TUF (no hash prefixes)")
+	}
+	fmt.Printf("\n\n")
 }
 
 // ShowTargets displays a table of available targets
@@ -69,11 +84,30 @@ func ShowTargets(targets []client.TargetInfo) {
 
 // ShowRepositoryInfo displays detailed repository information
 func ShowRepositoryInfo(info *client.RepositoryInfo) {
-	fmt.Printf("\n%s %s\n\n", bold("📊"), bold("Repository Information"))
+	fmt.Printf("\n%s %s", bold("📊"), bold("Repository Information"))
+	if info.TufOnCiGit {
+		fmt.Printf(" %s", yellow("📝 tuf-on-ci git"))
+	}
+	fmt.Printf("\n\n")
 
 	fmt.Printf("%s %s\n", bold("URLs:"), "")
 	fmt.Printf("  Metadata: %s\n", cyan(info.MetadataURL))
 	fmt.Printf("  Targets:  %s\n\n", cyan(info.TargetsURL))
+
+	// Show detected settings
+	fmt.Printf("%s %s\n", bold("🔍"), bold("Auto-detected:"))
+	if info.TufOnCiGit {
+		fmt.Printf("  Layout: tuf-on-ci git (unversioned metadata)\n")
+		fmt.Printf("  Hash prefixes: disabled (git source files)\n")
+	} else {
+		fmt.Printf("  Layout: standard TUF\n")
+		if info.HashPrefixes {
+			fmt.Printf("  Hash prefixes: enabled (consistent_snapshot=true)\n")
+		} else {
+			fmt.Printf("  Hash prefixes: disabled (consistent_snapshot=false)\n")
+		}
+	}
+	fmt.Printf("\n")
 
 	fmt.Printf("%s %s\n", bold("⏰"), bold("Metadata Expiry:"))
 	showRoleExpiry("Root", info.RootVersion, info.RootExpires)

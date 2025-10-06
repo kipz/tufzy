@@ -1,0 +1,615 @@
+{
+    "policiesByArtifactPattern": {
+        "pkg:oci/*": {
+            "policies": {
+                "bewaire-pr-review": {
+                    "parameters": null,
+                    "policy": {
+                        "expires": "2026-10-06T12:00:19+00:00",
+                        "functionaries": {
+                            "SHA256:9i3hTQ1YYLkVBsgbfcEoGN7h0Z9pQveGKrVkX59+sGw": {
+                                "keytype": "ed25519",
+                                "keyval": {
+                                    "public": "33d5897a1c4e5338cc3d8dcc71060425a38a01470c9b900f2e582c085b3bb802"
+                                },
+                                "scheme": "ed25519",
+                                "keyid": "SHA256:9i3hTQ1YYLkVBsgbfcEoGN7h0Z9pQveGKrVkX59+sGw",
+                                "xUri": "https://vault.us1.ddbuild.io/crypto/k8s/keys/k8s_image-integrity_image-integrity-signer_artifact_validation_1:1@1220a00ad4909877300a17a597990c2cd74616a9c4d63b3e481b72d72c29473803b5",
+                                "keyIdHashAlgorithms": []
+                            },
+                            "SHA256:gSri+Khs8XbHGe54E3gnNuLStswUvLdVNYw2RhXpzJI": {
+                                "keytype": "ed25519",
+                                "keyval": {
+                                    "public": "c1753e7358a5126ab0432921e454f1bf8da8a8863397b17ebd4674d7d08dd55c"
+                                },
+                                "scheme": "ed25519",
+                                "keyid": "SHA256:gSri+Khs8XbHGe54E3gnNuLStswUvLdVNYw2RhXpzJI",
+                                "xUri": "https://vault.us1.ddbuild.io/crypto/k8s/keys/k8s_image-integrity_image-integrity-signer_artifact_validation_1:2@1220a81d92ea3dc24432a67525b7c1b4f890fb0166cf47a3edf04cbc82dfe11223f1",
+                                "keyIdHashAlgorithms": []
+                            },
+                            "https://vault.us1.ddbuild.io/crypto/k8s/keys/k8s_rapid-seceng-sit_bewaire-api_attestations-signing-key:1@122046d693d605060c9170f3fabffbe2a2f3ee839e9b3b3c8d4d667d60be83b08e95": {
+                                "keytype": "ed25519",
+                                "keyval": {
+                                    "public": "a61cdd351dec1938999f33d154ddc1931b0443575bbf8c3b584e96dd4972bd91"
+                                },
+                                "scheme": "ed25519",
+                                "keyid": "https://vault.us1.ddbuild.io/crypto/k8s/keys/k8s_rapid-seceng-sit_bewaire-api_attestations-signing-key:1@122046d693d605060c9170f3fabffbe2a2f3ee839e9b3b3c8d4d667d60be83b08e95",
+                                "xUri": "https://vault.us1.ddbuild.io/crypto/k8s/keys/k8s_rapid-seceng-sit_bewaire-api_attestations-signing-key:1@122046d693d605060c9170f3fabffbe2a2f3ee839e9b3b3c8d4d667d60be83b08e95",
+                                "keyIdHashAlgorithms": []
+                            }
+                        },
+                        "steps": [
+                            {
+                                "name": "bewaire-pr-review",
+                                "expectedMaterials": [
+                                    "ALLOW git+https://github.com/DataDog/*/commit/*",
+                                    "DISALLOW *"
+                                ],
+                                "expectedProducts": [],
+                                "expectedStepPredicates": [
+                                    {
+                                        "predicateType": "https://github.com/datadog/dd-source/domains/devex/artifact-validation/shared/libs/messages/bewaire_v0",
+                                        "expectedAttributes": [
+                                            {
+                                                "rule": "predicate.response.verdict == 'VERDICT_BENIGN'"
+                                            }
+                                        ],
+                                        "functionaries": [
+                                            "https://vault.us1.ddbuild.io/crypto/k8s/keys/k8s_rapid-seceng-sit_bewaire-api_attestations-signing-key:1@122046d693d605060c9170f3fabffbe2a2f3ee839e9b3b3c8d4d667d60be83b08e95"
+                                        ]
+                                    }
+                                ]
+                            },
+                            {
+                                "name": "image",
+                                "expectedMaterials": [
+                                    "MATCH * IN git+https://gitlab.ddbuild.io/ WITH MATERIALS IN git+https://github.com/ FROM bewaire-pr-review",
+                                    "DISALLOW *"
+                                ],
+                                "expectedProducts": [
+                                    "CREATE registry.ddbuild.io/*",
+                                    "DISALLOW *"
+                                ],
+                                "expectedStepPredicates": [
+                                    {
+                                        "predicateType": "https://artifact-validation.ddbuild.io/image-integrity-signer/v0.1.0",
+                                        "expectedAttributes": [
+                                            {
+                                                "rule": "predicate.trustedGitlabClaims.issuer == 'https://gitlab.ddbuild.io'"
+                                            },
+                                            {
+                                                "rule": "predicate.trustedGitlabClaims.sha == predicate.untrustedGitlabClaims.sha"
+                                            }
+                                        ],
+                                        "functionaries": [
+                                            "SHA256:9i3hTQ1YYLkVBsgbfcEoGN7h0Z9pQveGKrVkX59+sGw",
+                                            "SHA256:gSri+Khs8XbHGe54E3gnNuLStswUvLdVNYw2RhXpzJI"
+                                        ]
+                                    }
+                                ]
+                            }
+                        ],
+                        "subjects": [],
+                        "inspections": []
+                    },
+                    "scopes": {
+                        "rmsClusterQuery": "*"
+                    },
+                    "metadata": {
+                        "inTotoBinaryCommitUrl": "https://github.com/DataDog/dd-source/commit/0bee1477e0a0d940b67f730969a54bc3e26c891e",
+                        "policyTemplateCommitUrl": "https://github.com/DataDog/dd-source/commit/8120080e16eea6ddc7c028e4e409ccf502b06f7e",
+                        "policyTemplateFile": "https://github.com/DataDog/dd-source/blob/8120080e16eea6ddc7c028e4e409ccf502b06f7e/domains/devex/artifact-validation/apps/policy-repository/in_toto/templates/bewaire-pr-review.yml",
+                        "environmentConfigCommitUrl": "https://github.com/DataDog/dd-source/commit/556ed9f84754008217444bb17c6bbcb39ed6c169",
+                        "environmentConfigFile": "https://github.com/DataDog/dd-source/blob/556ed9f84754008217444bb17c6bbcb39ed6c169/domains/devex/artifact-validation/apps/policy-repository/in_toto/env/prod.yml"
+                    }
+                },
+                "image-integrity-breakglass": {
+                    "parameters": null,
+                    "policy": {
+                        "expires": "2026-10-06T12:00:19+00:00",
+                        "functionaries": {
+                            "SHA256:9i3hTQ1YYLkVBsgbfcEoGN7h0Z9pQveGKrVkX59+sGw": {
+                                "keytype": "ed25519",
+                                "keyval": {
+                                    "public": "33d5897a1c4e5338cc3d8dcc71060425a38a01470c9b900f2e582c085b3bb802"
+                                },
+                                "scheme": "ed25519",
+                                "keyid": "SHA256:9i3hTQ1YYLkVBsgbfcEoGN7h0Z9pQveGKrVkX59+sGw",
+                                "xUri": "https://vault.us1.ddbuild.io/crypto/k8s/keys/k8s_image-integrity_image-integrity-signer_artifact_validation_1:1@1220a00ad4909877300a17a597990c2cd74616a9c4d63b3e481b72d72c29473803b5",
+                                "keyIdHashAlgorithms": []
+                            },
+                            "SHA256:gSri+Khs8XbHGe54E3gnNuLStswUvLdVNYw2RhXpzJI": {
+                                "keytype": "ed25519",
+                                "keyval": {
+                                    "public": "c1753e7358a5126ab0432921e454f1bf8da8a8863397b17ebd4674d7d08dd55c"
+                                },
+                                "scheme": "ed25519",
+                                "keyid": "SHA256:gSri+Khs8XbHGe54E3gnNuLStswUvLdVNYw2RhXpzJI",
+                                "xUri": "https://vault.us1.ddbuild.io/crypto/k8s/keys/k8s_image-integrity_image-integrity-signer_artifact_validation_1:2@1220a81d92ea3dc24432a67525b7c1b4f890fb0166cf47a3edf04cbc82dfe11223f1",
+                                "keyIdHashAlgorithms": []
+                            }
+                        },
+                        "steps": [
+                            {
+                                "name": "image",
+                                "expectedMaterials": [
+                                    "ALLOW registry.ddbuild.io/*"
+                                ],
+                                "expectedProducts": [],
+                                "expectedStepPredicates": [
+                                    {
+                                        "predicateType": "https://artifact-validation.ddbuild.io/image-integrity-signer/v0.1.0",
+                                        "expectedAttributes": [
+                                            {
+                                                "rule": "'breakglass' in predicate.roles"
+                                            },
+                                            {
+                                                "rule": "predicate.userEmail.endsWith('@datadoghq.com')"
+                                            }
+                                        ],
+                                        "functionaries": [
+                                            "SHA256:9i3hTQ1YYLkVBsgbfcEoGN7h0Z9pQveGKrVkX59+sGw",
+                                            "SHA256:gSri+Khs8XbHGe54E3gnNuLStswUvLdVNYw2RhXpzJI"
+                                        ]
+                                    }
+                                ]
+                            }
+                        ],
+                        "subjects": [],
+                        "inspections": []
+                    },
+                    "scopes": {
+                        "rmsClusterQuery": "*"
+                    },
+                    "metadata": {
+                        "inTotoBinaryCommitUrl": "https://github.com/DataDog/dd-source/commit/0bee1477e0a0d940b67f730969a54bc3e26c891e",
+                        "policyTemplateCommitUrl": "https://github.com/DataDog/dd-source/commit/81a123e2b72f0243701111bd172a88eda6ad3ad9",
+                        "policyTemplateFile": "https://github.com/DataDog/dd-source/blob/81a123e2b72f0243701111bd172a88eda6ad3ad9/domains/devex/artifact-validation/apps/policy-repository/in_toto/templates/image-integrity-breakglass.yml",
+                        "environmentConfigCommitUrl": "https://github.com/DataDog/dd-source/commit/556ed9f84754008217444bb17c6bbcb39ed6c169",
+                        "environmentConfigFile": "https://github.com/DataDog/dd-source/blob/556ed9f84754008217444bb17c6bbcb39ed6c169/domains/devex/artifact-validation/apps/policy-repository/in_toto/env/prod.yml"
+                    }
+                },
+                "image-integrity-commit-signing": {
+                    "parameters": null,
+                    "policy": {
+                        "expires": "2026-10-06T12:00:19+00:00",
+                        "functionaries": {
+                            "SHA256:9i3hTQ1YYLkVBsgbfcEoGN7h0Z9pQveGKrVkX59+sGw": {
+                                "keytype": "ed25519",
+                                "keyval": {
+                                    "public": "33d5897a1c4e5338cc3d8dcc71060425a38a01470c9b900f2e582c085b3bb802"
+                                },
+                                "scheme": "ed25519",
+                                "keyid": "SHA256:9i3hTQ1YYLkVBsgbfcEoGN7h0Z9pQveGKrVkX59+sGw",
+                                "xUri": "https://vault.us1.ddbuild.io/crypto/k8s/keys/k8s_image-integrity_image-integrity-signer_artifact_validation_1:1@1220a00ad4909877300a17a597990c2cd74616a9c4d63b3e481b72d72c29473803b5",
+                                "keyIdHashAlgorithms": []
+                            },
+                            "SHA256:gSri+Khs8XbHGe54E3gnNuLStswUvLdVNYw2RhXpzJI": {
+                                "keytype": "ed25519",
+                                "keyval": {
+                                    "public": "c1753e7358a5126ab0432921e454f1bf8da8a8863397b17ebd4674d7d08dd55c"
+                                },
+                                "scheme": "ed25519",
+                                "keyid": "SHA256:gSri+Khs8XbHGe54E3gnNuLStswUvLdVNYw2RhXpzJI",
+                                "xUri": "https://vault.us1.ddbuild.io/crypto/k8s/keys/k8s_image-integrity_image-integrity-signer_artifact_validation_1:2@1220a81d92ea3dc24432a67525b7c1b4f890fb0166cf47a3edf04cbc82dfe11223f1",
+                                "keyIdHashAlgorithms": []
+                            },
+                            "https://vault.us1.ddbuild.io/crypto/k8s/keys/k8s_devex_commit-signing-intake_signing-key:1@12205ca3715518a82fe7490cba2e4565a107310682db6375efe2dca9b497b9ee9e16": {
+                                "keytype": "ed25519",
+                                "keyval": {
+                                    "public": "6fcaf242f4dec7ea293b510a2eed2af9af87851ea04d50c66cbd2f30c2fce249"
+                                },
+                                "scheme": "ed25519",
+                                "keyid": "https://vault.us1.ddbuild.io/crypto/k8s/keys/k8s_devex_commit-signing-intake_signing-key:1@12205ca3715518a82fe7490cba2e4565a107310682db6375efe2dca9b497b9ee9e16",
+                                "xUri": "https://vault.us1.ddbuild.io/crypto/k8s/keys/k8s_devex_commit-signing-intake_signing-key:1@12205ca3715518a82fe7490cba2e4565a107310682db6375efe2dca9b497b9ee9e16",
+                                "keyIdHashAlgorithms": []
+                            },
+                            "https://vault.us1.ddbuild.io/crypto/k8s/keys/k8s_devex_commit-signing-intake_signing-key:2@12206a68a5c5c03acb3f4c2f2e87c0c59efc2b2db7262bdbc5a1007551f44fe4251f": {
+                                "keytype": "ed25519",
+                                "keyval": {
+                                    "public": "207c06ede40feca3d3eec3bc7cb12f845333c0b4b573105ba3e462afa30a5422"
+                                },
+                                "scheme": "ed25519",
+                                "keyid": "https://vault.us1.ddbuild.io/crypto/k8s/keys/k8s_devex_commit-signing-intake_signing-key:2@12206a68a5c5c03acb3f4c2f2e87c0c59efc2b2db7262bdbc5a1007551f44fe4251f",
+                                "xUri": "https://vault.us1.ddbuild.io/crypto/k8s/keys/k8s_devex_commit-signing-intake_signing-key:2@12206a68a5c5c03acb3f4c2f2e87c0c59efc2b2db7262bdbc5a1007551f44fe4251f",
+                                "keyIdHashAlgorithms": []
+                            }
+                        },
+                        "steps": [
+                            {
+                                "name": "source",
+                                "expectedMaterials": [
+                                    "ALLOW git+https://github.com/DataDog/*",
+                                    "DISALLOW *"
+                                ],
+                                "expectedProducts": [],
+                                "expectedStepPredicates": [
+                                    {
+                                        "predicateType": "https://github.com/datadog/dd-source/domains/devex/artifact-validation/shared/libs/messages/commit_signing_v0",
+                                        "expectedAttributes": [
+                                            {
+                                                "rule": "predicate.pullRequest != null"
+                                            },
+                                            {
+                                                "rule": "predicate.pullRequest.annotations != null"
+                                            },
+                                            {
+                                                "rule": "predicate.pullRequest.annotations.Org == 'DataDog'"
+                                            },
+                                            {
+                                                "rule": "predicate.pullRequest.name.startsWith('git+https://github.com/DataDog/')"
+                                            },
+                                            {
+                                                "rule": "predicate.pullRequest.uri.startsWith('https://github.com/DataDog/')"
+                                            },
+                                            {
+                                                "rule": "predicate.mergeCommit != null"
+                                            },
+                                            {
+                                                "rule": "predicate.mergeCommit.signature != null"
+                                            },
+                                            {
+                                                "rule": "predicate.mergeCommit.signature.isValid == true"
+                                            },
+                                            {
+                                                "rule": "predicate.mergeCommit.commit != null"
+                                            },
+                                            {
+                                                "rule": "predicate.mergeCommit.commit.name.startsWith('git+https://github.com/DataDog/')"
+                                            },
+                                            {
+                                                "rule": "predicate.mergeCommit.commit.uri.startsWith('https://github.com/DataDog/')"
+                                            },
+                                            {
+                                                "rule": "predicate.commits.size() > 0"
+                                            },
+                                            {
+                                                "rule": "predicate.commits.all(c, c.signature != null)"
+                                            },
+                                            {
+                                                "rule": "predicate.commits.all(c, c.commit != null)"
+                                            },
+                                            {
+                                                "rule": "predicate.commits.all(c, c.signature.isValid == true)"
+                                            },
+                                            {
+                                                "rule": "predicate.commits.all(c, c.commit.name.startsWith('git+https://github.com/DataDog/'))"
+                                            },
+                                            {
+                                                "rule": "predicate.commits.all(c, c.commit.uri.startsWith('https://github.com/DataDog/'))"
+                                            }
+                                        ],
+                                        "functionaries": [
+                                            "https://vault.us1.ddbuild.io/crypto/k8s/keys/k8s_devex_commit-signing-intake_signing-key:1@12205ca3715518a82fe7490cba2e4565a107310682db6375efe2dca9b497b9ee9e16",
+                                            "https://vault.us1.ddbuild.io/crypto/k8s/keys/k8s_devex_commit-signing-intake_signing-key:2@12206a68a5c5c03acb3f4c2f2e87c0c59efc2b2db7262bdbc5a1007551f44fe4251f"
+                                        ]
+                                    }
+                                ]
+                            },
+                            {
+                                "name": "image",
+                                "expectedMaterials": [
+                                    "MATCH * IN git+https://gitlab.ddbuild.io/ WITH MATERIALS IN git+https://github.com/ FROM source",
+                                    "DISALLOW *"
+                                ],
+                                "expectedProducts": [
+                                    "CREATE registry.ddbuild.io/*",
+                                    "DISALLOW *"
+                                ],
+                                "expectedStepPredicates": [
+                                    {
+                                        "predicateType": "https://artifact-validation.ddbuild.io/image-integrity-signer/v0.1.0",
+                                        "expectedAttributes": [
+                                            {
+                                                "rule": "predicate.trustedGitlabClaims.issuer == 'https://gitlab.ddbuild.io'"
+                                            },
+                                            {
+                                                "rule": "predicate.trustedGitlabClaims.sha == predicate.untrustedGitlabClaims.sha"
+                                            }
+                                        ],
+                                        "functionaries": [
+                                            "SHA256:9i3hTQ1YYLkVBsgbfcEoGN7h0Z9pQveGKrVkX59+sGw",
+                                            "SHA256:gSri+Khs8XbHGe54E3gnNuLStswUvLdVNYw2RhXpzJI"
+                                        ]
+                                    }
+                                ]
+                            }
+                        ],
+                        "subjects": [],
+                        "inspections": []
+                    },
+                    "scopes": {
+                        "rmsClusterQuery": "*"
+                    },
+                    "metadata": {
+                        "inTotoBinaryCommitUrl": "https://github.com/DataDog/dd-source/commit/0bee1477e0a0d940b67f730969a54bc3e26c891e",
+                        "policyTemplateCommitUrl": "https://github.com/DataDog/dd-source/commit/8120080e16eea6ddc7c028e4e409ccf502b06f7e",
+                        "policyTemplateFile": "https://github.com/DataDog/dd-source/blob/8120080e16eea6ddc7c028e4e409ccf502b06f7e/domains/devex/artifact-validation/apps/policy-repository/in_toto/templates/image-integrity-commit-signing.yml",
+                        "environmentConfigCommitUrl": "https://github.com/DataDog/dd-source/commit/556ed9f84754008217444bb17c6bbcb39ed6c169",
+                        "environmentConfigFile": "https://github.com/DataDog/dd-source/blob/556ed9f84754008217444bb17c6bbcb39ed6c169/domains/devex/artifact-validation/apps/policy-repository/in_toto/env/prod.yml"
+                    }
+                },
+                "image-integrity-from-laptop": {
+                    "parameters": null,
+                    "policy": {
+                        "expires": "2026-10-06T12:00:19+00:00",
+                        "functionaries": {
+                            "SHA256:9i3hTQ1YYLkVBsgbfcEoGN7h0Z9pQveGKrVkX59+sGw": {
+                                "keytype": "ed25519",
+                                "keyval": {
+                                    "public": "33d5897a1c4e5338cc3d8dcc71060425a38a01470c9b900f2e582c085b3bb802"
+                                },
+                                "scheme": "ed25519",
+                                "keyid": "SHA256:9i3hTQ1YYLkVBsgbfcEoGN7h0Z9pQveGKrVkX59+sGw",
+                                "xUri": "https://vault.us1.ddbuild.io/crypto/k8s/keys/k8s_image-integrity_image-integrity-signer_artifact_validation_1:1@1220a00ad4909877300a17a597990c2cd74616a9c4d63b3e481b72d72c29473803b5",
+                                "keyIdHashAlgorithms": []
+                            },
+                            "SHA256:gSri+Khs8XbHGe54E3gnNuLStswUvLdVNYw2RhXpzJI": {
+                                "keytype": "ed25519",
+                                "keyval": {
+                                    "public": "c1753e7358a5126ab0432921e454f1bf8da8a8863397b17ebd4674d7d08dd55c"
+                                },
+                                "scheme": "ed25519",
+                                "keyid": "SHA256:gSri+Khs8XbHGe54E3gnNuLStswUvLdVNYw2RhXpzJI",
+                                "xUri": "https://vault.us1.ddbuild.io/crypto/k8s/keys/k8s_image-integrity_image-integrity-signer_artifact_validation_1:2@1220a81d92ea3dc24432a67525b7c1b4f890fb0166cf47a3edf04cbc82dfe11223f1",
+                                "keyIdHashAlgorithms": []
+                            }
+                        },
+                        "steps": [
+                            {
+                                "name": "image",
+                                "expectedMaterials": [
+                                    "ALLOW registry.ddbuild.io/*"
+                                ],
+                                "expectedProducts": [],
+                                "expectedStepPredicates": [
+                                    {
+                                        "predicateType": "https://artifact-validation.ddbuild.io/image-integrity-signer/v0.1.0",
+                                        "expectedAttributes": [
+                                            {
+                                                "rule": "'engineering' in predicate.roles"
+                                            },
+                                            {
+                                                "rule": "predicate.userEmail.endsWith('@datadoghq.com')"
+                                            }
+                                        ],
+                                        "functionaries": [
+                                            "SHA256:9i3hTQ1YYLkVBsgbfcEoGN7h0Z9pQveGKrVkX59+sGw",
+                                            "SHA256:gSri+Khs8XbHGe54E3gnNuLStswUvLdVNYw2RhXpzJI"
+                                        ]
+                                    }
+                                ]
+                            }
+                        ],
+                        "subjects": [],
+                        "inspections": []
+                    },
+                    "scopes": {
+                        "rmsClusterQuery": "*"
+                    },
+                    "metadata": {
+                        "inTotoBinaryCommitUrl": "https://github.com/DataDog/dd-source/commit/0bee1477e0a0d940b67f730969a54bc3e26c891e",
+                        "policyTemplateCommitUrl": "https://github.com/DataDog/dd-source/commit/81a123e2b72f0243701111bd172a88eda6ad3ad9",
+                        "policyTemplateFile": "https://github.com/DataDog/dd-source/blob/81a123e2b72f0243701111bd172a88eda6ad3ad9/domains/devex/artifact-validation/apps/policy-repository/in_toto/templates/image-integrity-from-laptop.yml",
+                        "environmentConfigCommitUrl": "https://github.com/DataDog/dd-source/commit/556ed9f84754008217444bb17c6bbcb39ed6c169",
+                        "environmentConfigFile": "https://github.com/DataDog/dd-source/blob/556ed9f84754008217444bb17c6bbcb39ed6c169/domains/devex/artifact-validation/apps/policy-repository/in_toto/env/prod.yml"
+                    }
+                },
+                "image-integrity-in-ci": {
+                    "parameters": null,
+                    "policy": {
+                        "expires": "2026-10-06T12:00:19+00:00",
+                        "functionaries": {
+                            "SHA256:9i3hTQ1YYLkVBsgbfcEoGN7h0Z9pQveGKrVkX59+sGw": {
+                                "keytype": "ed25519",
+                                "keyval": {
+                                    "public": "33d5897a1c4e5338cc3d8dcc71060425a38a01470c9b900f2e582c085b3bb802"
+                                },
+                                "scheme": "ed25519",
+                                "keyid": "SHA256:9i3hTQ1YYLkVBsgbfcEoGN7h0Z9pQveGKrVkX59+sGw",
+                                "xUri": "https://vault.us1.ddbuild.io/crypto/k8s/keys/k8s_image-integrity_image-integrity-signer_artifact_validation_1:1@1220a00ad4909877300a17a597990c2cd74616a9c4d63b3e481b72d72c29473803b5",
+                                "keyIdHashAlgorithms": []
+                            },
+                            "SHA256:gSri+Khs8XbHGe54E3gnNuLStswUvLdVNYw2RhXpzJI": {
+                                "keytype": "ed25519",
+                                "keyval": {
+                                    "public": "c1753e7358a5126ab0432921e454f1bf8da8a8863397b17ebd4674d7d08dd55c"
+                                },
+                                "scheme": "ed25519",
+                                "keyid": "SHA256:gSri+Khs8XbHGe54E3gnNuLStswUvLdVNYw2RhXpzJI",
+                                "xUri": "https://vault.us1.ddbuild.io/crypto/k8s/keys/k8s_image-integrity_image-integrity-signer_artifact_validation_1:2@1220a81d92ea3dc24432a67525b7c1b4f890fb0166cf47a3edf04cbc82dfe11223f1",
+                                "keyIdHashAlgorithms": []
+                            }
+                        },
+                        "steps": [
+                            {
+                                "name": "image",
+                                "expectedMaterials": [
+                                    "ALLOW registry.ddbuild.io/*"
+                                ],
+                                "expectedProducts": [],
+                                "expectedStepPredicates": [
+                                    {
+                                        "predicateType": "https://artifact-validation.ddbuild.io/image-integrity-signer/v0.1.0",
+                                        "expectedAttributes": [
+                                            {
+                                                "rule": "'ci' in predicate.roles"
+                                            },
+                                            {
+                                                "rule": "predicate.trustedGitlabClaims.issuer == 'https://gitlab.ddbuild.io'"
+                                            },
+                                            {
+                                                "rule": "predicate.trustedGitlabClaims.sha == predicate.untrustedGitlabClaims.sha"
+                                            },
+                                            {
+                                                "rule": "predicate.userEmail.matches(r'^gitlab-runner.+@kubernetes.us1.ddbuild.io$')"
+                                            }
+                                        ],
+                                        "functionaries": [
+                                            "SHA256:9i3hTQ1YYLkVBsgbfcEoGN7h0Z9pQveGKrVkX59+sGw",
+                                            "SHA256:gSri+Khs8XbHGe54E3gnNuLStswUvLdVNYw2RhXpzJI"
+                                        ]
+                                    }
+                                ]
+                            }
+                        ],
+                        "subjects": [],
+                        "inspections": []
+                    },
+                    "scopes": {
+                        "rmsClusterQuery": "*"
+                    },
+                    "metadata": {
+                        "inTotoBinaryCommitUrl": "https://github.com/DataDog/dd-source/commit/0bee1477e0a0d940b67f730969a54bc3e26c891e",
+                        "policyTemplateCommitUrl": "https://github.com/DataDog/dd-source/commit/44015437e195b8eb4d12fa92f30b33bb229201f9",
+                        "policyTemplateFile": "https://github.com/DataDog/dd-source/blob/44015437e195b8eb4d12fa92f30b33bb229201f9/domains/devex/artifact-validation/apps/policy-repository/in_toto/templates/image-integrity-in-ci.yml",
+                        "environmentConfigCommitUrl": "https://github.com/DataDog/dd-source/commit/556ed9f84754008217444bb17c6bbcb39ed6c169",
+                        "environmentConfigFile": "https://github.com/DataDog/dd-source/blob/556ed9f84754008217444bb17c6bbcb39ed6c169/domains/devex/artifact-validation/apps/policy-repository/in_toto/env/prod.yml"
+                    }
+                },
+                "image-integrity-pci": {
+                    "parameters": null,
+                    "policy": {
+                        "expires": "2026-10-06T12:00:19+00:00",
+                        "functionaries": {
+                            "SHA256:9i3hTQ1YYLkVBsgbfcEoGN7h0Z9pQveGKrVkX59+sGw": {
+                                "keytype": "ed25519",
+                                "keyval": {
+                                    "public": "33d5897a1c4e5338cc3d8dcc71060425a38a01470c9b900f2e582c085b3bb802"
+                                },
+                                "scheme": "ed25519",
+                                "keyid": "SHA256:9i3hTQ1YYLkVBsgbfcEoGN7h0Z9pQveGKrVkX59+sGw",
+                                "xUri": "https://vault.us1.ddbuild.io/crypto/k8s/keys/k8s_image-integrity_image-integrity-signer_artifact_validation_1:1@1220a00ad4909877300a17a597990c2cd74616a9c4d63b3e481b72d72c29473803b5",
+                                "keyIdHashAlgorithms": []
+                            },
+                            "SHA256:gSri+Khs8XbHGe54E3gnNuLStswUvLdVNYw2RhXpzJI": {
+                                "keytype": "ed25519",
+                                "keyval": {
+                                    "public": "c1753e7358a5126ab0432921e454f1bf8da8a8863397b17ebd4674d7d08dd55c"
+                                },
+                                "scheme": "ed25519",
+                                "keyid": "SHA256:gSri+Khs8XbHGe54E3gnNuLStswUvLdVNYw2RhXpzJI",
+                                "xUri": "https://vault.us1.ddbuild.io/crypto/k8s/keys/k8s_image-integrity_image-integrity-signer_artifact_validation_1:2@1220a81d92ea3dc24432a67525b7c1b4f890fb0166cf47a3edf04cbc82dfe11223f1",
+                                "keyIdHashAlgorithms": []
+                            },
+                            "https://vault.us1.ddbuild.io/crypto/k8s/keys/k8s_devex_dd-pr-intake_signing-key:1@122071df5386b6112514a89fe5386296569bd89f1a789e663373bb417c1ea1234d70": {
+                                "keytype": "ed25519",
+                                "keyval": {
+                                    "public": "5bd405bc54f007c4639b1cb2b4e6da1351696bbc279ed433ff3579f15bc43cb6"
+                                },
+                                "scheme": "ed25519",
+                                "keyid": "https://vault.us1.ddbuild.io/crypto/k8s/keys/k8s_devex_dd-pr-intake_signing-key:1@122071df5386b6112514a89fe5386296569bd89f1a789e663373bb417c1ea1234d70",
+                                "xUri": "https://vault.us1.ddbuild.io/crypto/k8s/keys/k8s_devex_dd-pr-intake_signing-key:1@122071df5386b6112514a89fe5386296569bd89f1a789e663373bb417c1ea1234d70",
+                                "keyIdHashAlgorithms": []
+                            },
+                            "https://vault.us1.ddbuild.io/crypto/k8s/keys/k8s_devex_dd-pr-intake_signing-key:2@12202672edd00db13b0bae8a8c9d36d250a21bdaa6bd3c32137a9f0cfa7be7ad7361": {
+                                "keytype": "ed25519",
+                                "keyval": {
+                                    "public": "b397f6b2721ef81fc020bbb6ea22b491e299abe21754c1141ee8814a2214d1ca"
+                                },
+                                "scheme": "ed25519",
+                                "keyid": "https://vault.us1.ddbuild.io/crypto/k8s/keys/k8s_devex_dd-pr-intake_signing-key:2@12202672edd00db13b0bae8a8c9d36d250a21bdaa6bd3c32137a9f0cfa7be7ad7361",
+                                "xUri": "https://vault.us1.ddbuild.io/crypto/k8s/keys/k8s_devex_dd-pr-intake_signing-key:2@12202672edd00db13b0bae8a8c9d36d250a21bdaa6bd3c32137a9f0cfa7be7ad7361",
+                                "keyIdHashAlgorithms": []
+                            }
+                        },
+                        "steps": [
+                            {
+                                "name": "github-pr-merge",
+                                "expectedMaterials": [
+                                    "ALLOW git+https://github.com/DataDog/*",
+                                    "DISALLOW *"
+                                ],
+                                "expectedProducts": [],
+                                "expectedStepPredicates": [
+                                    {
+                                        "predicateType": "https://github.com/datadog/dd-source/domains/devex/artifact-validation/shared/libs/messages/github_pr_merge_pci_v0",
+                                        "expectedAttributes": [
+                                            {
+                                                "rule": "predicate.pullRequest != null"
+                                            },
+                                            {
+                                                "rule": "predicate.pullRequest.annotations != null"
+                                            },
+                                            {
+                                                "rule": "predicate.pullRequest.annotations.Org == 'DataDog'"
+                                            },
+                                            {
+                                                "rule": "predicate.pullRequest.name.startsWith('git+https://github.com/DataDog/')"
+                                            },
+                                            {
+                                                "rule": "predicate.pullRequest.uri.startsWith('https://github.com/DataDog/')"
+                                            },
+                                            {
+                                                "rule": "predicate.isMerged == true"
+                                            },
+                                            {
+                                                "rule": "predicate.isApproved == true"
+                                            },
+                                            {
+                                                "rule": "predicate.baseRef != null"
+                                            },
+                                            {
+                                                "rule": "predicate.baseRef.branchProtectionRule != null"
+                                            },
+                                            {
+                                                "rule": "predicate.baseRef.branchProtectionRule.requiresApprovingReviews == true"
+                                            },
+                                            {
+                                                "rule": "predicate.baseRef.branchProtectionRule.restrictsPushes == true"
+                                            }
+                                        ],
+                                        "functionaries": [
+                                            "https://vault.us1.ddbuild.io/crypto/k8s/keys/k8s_devex_dd-pr-intake_signing-key:1@122071df5386b6112514a89fe5386296569bd89f1a789e663373bb417c1ea1234d70",
+                                            "https://vault.us1.ddbuild.io/crypto/k8s/keys/k8s_devex_dd-pr-intake_signing-key:2@12202672edd00db13b0bae8a8c9d36d250a21bdaa6bd3c32137a9f0cfa7be7ad7361"
+                                        ]
+                                    }
+                                ]
+                            },
+                            {
+                                "name": "image",
+                                "expectedMaterials": [
+                                    "MATCH * IN git+https://gitlab.ddbuild.io/ WITH MATERIALS IN git+https://github.com/ FROM github-pr-merge",
+                                    "DISALLOW *"
+                                ],
+                                "expectedProducts": [
+                                    "CREATE registry.ddbuild.io/*",
+                                    "DISALLOW *"
+                                ],
+                                "expectedStepPredicates": [
+                                    {
+                                        "predicateType": "https://artifact-validation.ddbuild.io/image-integrity-signer/v0.1.0",
+                                        "expectedAttributes": [
+                                            {
+                                                "rule": "predicate.trustedGitlabClaims.issuer == 'https://gitlab.ddbuild.io'"
+                                            },
+                                            {
+                                                "rule": "predicate.trustedGitlabClaims.sha == predicate.untrustedGitlabClaims.sha"
+                                            }
+                                        ],
+                                        "functionaries": [
+                                            "SHA256:9i3hTQ1YYLkVBsgbfcEoGN7h0Z9pQveGKrVkX59+sGw",
+                                            "SHA256:gSri+Khs8XbHGe54E3gnNuLStswUvLdVNYw2RhXpzJI"
+                                        ]
+                                    }
+                                ]
+                            }
+                        ],
+                        "subjects": [],
+                        "inspections": []
+                    },
+                    "scopes": {
+                        "rmsClusterQuery": "cluster.family.startsWith('pci')"
+                    },
+                    "metadata": {
+                        "inTotoBinaryCommitUrl": "https://github.com/DataDog/dd-source/commit/0bee1477e0a0d940b67f730969a54bc3e26c891e",
+                        "policyTemplateCommitUrl": "https://github.com/DataDog/dd-source/commit/b40bc637806610b14c078108fc479202e90b7e80",
+                        "policyTemplateFile": "https://github.com/DataDog/dd-source/blob/b40bc637806610b14c078108fc479202e90b7e80/domains/devex/artifact-validation/apps/policy-repository/in_toto/templates/image-integrity-pci.yml",
+                        "environmentConfigCommitUrl": "https://github.com/DataDog/dd-source/commit/556ed9f84754008217444bb17c6bbcb39ed6c169",
+                        "environmentConfigFile": "https://github.com/DataDog/dd-source/blob/556ed9f84754008217444bb17c6bbcb39ed6c169/domains/devex/artifact-validation/apps/policy-repository/in_toto/env/prod.yml"
+                    }
+                }
+            }
+        }
+    }
+}

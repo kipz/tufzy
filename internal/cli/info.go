@@ -8,11 +8,6 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var (
-	infoHashPrefix  bool
-	infoTufOnCiGit bool
-)
-
 var infoCmd = &cobra.Command{
 	Use:   "info [metadata-url]",
 	Short: "Show repository information",
@@ -25,20 +20,11 @@ Example:
 	RunE: runInfo,
 }
 
-func init() {
-	infoCmd.Flags().BoolVar(&infoHashPrefix, "hash-prefix", false, "Target paths include hash prefixes")
-	infoCmd.Flags().BoolVar(&infoTufOnCiGit, "tuf-on-ci-git", false, "Use tuf-on-ci git repository layout")
-}
-
 func runInfo(cmd *cobra.Command, args []string) error {
 	metadataURL := args[0]
 
-	// Create TUF client with options
-	opts := client.ClientOptions{
-		PrefixTargetsWithHash: infoHashPrefix,
-		TufOnCiGit:            infoTufOnCiGit,
-	}
-	tufClient, err := client.NewClientWithOptions(metadataURL, opts)
+	// Create TUF client (auto-detects settings)
+	tufClient, err := client.NewClient(metadataURL)
 	if err != nil {
 		return fmt.Errorf("failed to create client: %w", err)
 	}

@@ -60,28 +60,30 @@ tufzy info https://jku.github.io/tuf-demo/metadata
 tufzy delegations https://jku.github.io/tuf-demo/metadata
 ```
 
+### Auto-Detection Features
+
+tufzy automatically detects:
+
+- **Hash-prefixed targets**: Based on `consistent_snapshot` field in root metadata
+- **Local vs remote**: Based on path format (absolute, relative, or URL)
+- **tuf-on-ci git layout**: Detects `root_history/` directory for local repositories
+
+No manual flags needed! Just point tufzy at any TUF repository and it figures out the layout.
+
 ### Using with tuf-on-ci repositories
 
-#### Published tuf-on-ci repositories (GitHub Pages)
-
-For repositories using hash-prefixed target paths:
+Both published and unpublished tuf-on-ci repositories work automatically:
 
 ```bash
-tufzy list https://example.github.io/repo/metadata --hash-prefix
-tufzy get https://example.github.io/repo/metadata file.txt --hash-prefix
+# Published repository (GitHub Pages)
+tufzy list https://example.github.io/repo/metadata
+
+# Local git checkout (auto-detects unversioned layout)
+tufzy list /path/to/tuf-on-ci-repo/metadata
+tufzy info ./metadata
 ```
 
-#### Local tuf-on-ci git repositories
-
-For local git checkouts of tuf-on-ci repositories (which use unversioned metadata files):
-
-```bash
-tufzy list /path/to/repo/metadata --hash-prefix --tuf-on-ci-git
-tufzy info /path/to/repo/metadata --hash-prefix --tuf-on-ci-git
-tufzy delegations /path/to/repo/metadata --hash-prefix --tuf-on-ci-git
-```
-
-The `--tuf-on-ci-git` flag maps TUF's versioned metadata requests to tuf-on-ci's git layout:
+When tufzy detects a local repository with `root_history/` directory, it automatically maps:
 - `N.root.json` (N > 1) → `root_history/N.root.json`
 - `N.snapshot.json` → `snapshot.json` (current version)
 - `N.timestamp.json` → `timestamp.json` (current version)

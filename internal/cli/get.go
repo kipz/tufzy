@@ -9,11 +9,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var (
-	outputPath       string
-	getNoHashPrefix  bool
-	getTufOnCiGit    bool
-)
+var outputPath string
 
 var getCmd = &cobra.Command{
 	Use:   "get [metadata-url] [target-file]",
@@ -29,8 +25,6 @@ Example:
 
 func init() {
 	getCmd.Flags().StringVarP(&outputPath, "output", "o", "", "Output path (default: current directory)")
-	getCmd.Flags().BoolVar(&getNoHashPrefix, "hash-prefix", false, "Target paths include hash prefixes")
-	getCmd.Flags().BoolVar(&getTufOnCiGit, "tuf-on-ci-git", false, "Use tuf-on-ci git repository layout")
 }
 
 func runGet(cmd *cobra.Command, args []string) error {
@@ -43,12 +37,8 @@ func runGet(cmd *cobra.Command, args []string) error {
 		destPath = filepath.Base(targetName)
 	}
 
-	// Create TUF client with options
-	opts := client.ClientOptions{
-		PrefixTargetsWithHash: getNoHashPrefix,
-		TufOnCiGit:            getTufOnCiGit,
-	}
-	tufClient, err := client.NewClientWithOptions(metadataURL, opts)
+	// Create TUF client (auto-detects settings)
+	tufClient, err := client.NewClient(metadataURL)
 	if err != nil {
 		return fmt.Errorf("failed to create client: %w", err)
 	}
