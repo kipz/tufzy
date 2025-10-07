@@ -64,7 +64,7 @@ func (f *FilesystemFetcher) DownloadFile(urlPath string, maxLength int64, _ time
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		return nil, &metadata.ErrDownloadHTTP{StatusCode: resp.StatusCode, URL: urlPath}
