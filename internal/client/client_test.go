@@ -44,7 +44,6 @@ func TestUpdate_Remote(t *testing.T) {
 	}
 }
 
-
 func TestGetTargets_Remote(t *testing.T) {
 	client, err := NewClient(jkuRemoteURL)
 	if err != nil {
@@ -82,7 +81,6 @@ func TestGetTargets_Remote(t *testing.T) {
 	}
 }
 
-
 func TestGetRepositoryInfo_Remote(t *testing.T) {
 	client, err := NewClient(jkuRemoteURL)
 	if err != nil {
@@ -107,7 +105,6 @@ func TestGetRepositoryInfo_Remote(t *testing.T) {
 		t.Errorf("Expected metadata URL %s, got %s", jkuRemoteURL, info.MetadataURL)
 	}
 }
-
 
 func TestGetDelegations_Remote(t *testing.T) {
 	client, err := NewClient(jkuRemoteURL)
@@ -143,4 +140,3 @@ func TestGetDelegations_Remote(t *testing.T) {
 		t.Error("Expected to find 'jku' or 'rdimitrov' delegation")
 	}
 }
-
