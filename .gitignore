@@ -1,5 +1,5 @@
-# Binaries
-tufzy
+# Binaries (at root only, not cmd/tufzy/)
+/tufzy
 *.exe
 *.exe~
 *.dll
