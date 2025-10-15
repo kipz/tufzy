@@ -63,11 +63,7 @@ func LayoutFromTUFOnCI(tufOnCIPath string, outputDir string) error {
 	// We may have other delegated roles, which we'll discover as we iterate through delegated roles in targets.json etc.
 	delegatedRoles := []string{"targets"}
 
-	for {
-		if len(delegatedRoles) == 0 {
-			break
-		}
-
+	for len(delegatedRoles) != 0 {
 		roleName := delegatedRoles[0]
 		if len(delegatedRoles) > 1 {
 			delegatedRoles = delegatedRoles[1:]
