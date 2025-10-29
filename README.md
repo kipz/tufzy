@@ -10,7 +10,9 @@ A friendly [TUF (The Update Framework)](https://theupdateframework.io/) client w
 - 🌳 **Show Delegations**: Visualize the delegation tree
 - 📊 **Repository Info**: Display metadata about the repository (versions, expiry dates, etc.)
 - 🎨 **Pretty Output**: Colorful, emoji-rich output with formatted tables
-- 📁 **Local & Remote**: Works with both HTTP(S) URLs and local filesystem paths
+- 📁 **Multiple Sources**: Works with HTTP(S) URLs, local filesystem paths, and OCI registries
+- 🐳 **OCI Registry Support**: Download TUF metadata and targets from OCI registries
+- 🔄 **Layout Conversion**: Convert tuf-on-ci layouts to standard TUF layouts (programmatic API)
 
 ## Installation
 
@@ -89,9 +91,42 @@ tufzy automatically detects repository configuration with **zero manual flags**:
 **For tuf-on-ci published repositories** (GitHub Pages):
 - Works like standard TUF (has versioned files and hash prefixes)
 
+### OCI Registry Support
+
+tufzy can download TUF metadata and targets directly from OCI registries, following the storage layout used by [go-tuf-mirror](https://github.com/docker/go-tuf-mirror).
+
+#### Usage
+
+```bash
+# List targets from OCI registry
+tufzy list oci://registry.example.com/repo/metadata:latest \
+          --targets-url oci://registry.example.com/repo/targets:latest
+
+# Get repository info
+tufzy info oci://registry.example.com/repo/metadata:latest \
+          --targets-url oci://registry.example.com/repo/targets:latest
+
+# Download a target file
+tufzy get oci://registry.example.com/repo/metadata:latest myfile.txt \
+         --targets-url oci://registry.example.com/repo/targets:latest
+
+# Show delegations
+tufzy delegations oci://registry.example.com/repo/metadata:latest \
+                  --targets-url oci://registry.example.com/repo/targets:latest
+```
+
+#### Key Points
+
+- **Separate repositories**: OCI sources require both `--targets-url` and metadata URL
+- **URL format**: Use `oci://` prefix for OCI registry URLs
+- **Authentication**: Automatically supports Docker config, Google Container Registry, and AWS ECR
+- **Compatible**: Works with TUF metadata stored using go-tuf-mirror's OCI layout
+- **Delegated roles**: Full support for delegated metadata and targets
+- **Consistent snapshots**: Supports both versioned and unversioned metadata files
+
 ### Using with any TUF repository
 
-Just point tufzy at the metadata URL or path - no flags needed:
+Just point tufzy at the metadata URL or path:
 
 ```bash
 # Remote standard TUF
@@ -103,6 +138,10 @@ tufzy list https://example.github.io/repo/metadata
 # Local tuf-on-ci git checkout
 tufzy list /path/to/tuf-on-ci-repo/metadata
 tufzy list ./metadata
+
+# OCI registry (requires --targets-url)
+tufzy list oci://registry.example.com/repo/metadata:latest \
+          --targets-url oci://registry.example.com/repo/targets:latest
 
 # All commands work the same way
 tufzy info <url-or-path>
@@ -195,6 +234,37 @@ tufzy uses the [go-tuf v2](https://github.com/theupdateframework/go-tuf) library
 
 Each repository gets its own isolated cache directory (based on URL hash) in `~/.tufzy/cache/`, preventing conflicts when working with multiple repositories.
 
+## Programmatic API
+
+### Repository Layout Conversion
+
+tufzy provides a Go API for converting tuf-on-ci repository layouts to standard TUF layouts. This is useful for publishing or mirroring tuf-on-ci repositories in a standard format.
+
+```go
+import "github.com/kipz/tufzy/internal/repository"
+
+// Convert a tuf-on-ci layout to standard TUF layout
+err := repository.LayoutFromTUFOnCI(
+    "/path/to/tuf-on-ci/repo",  // Source directory
+    "/path/to/output",           // Output directory
+)
+if err != nil {
+    log.Fatal(err)
+}
+```
+
+**What it does**:
+- Copies root history files (`root_history/*.root.json` → `metadata/*.root.json`)
+- Copies top-level metadata with versioning (`timestamp.json` → `metadata/timestamp.json`)
+- Copies delegated metadata with consistent snapshot versioning
+- Copies target files with hash prefixes based on `consistent_snapshot` setting
+- Creates standard TUF directory structure (`metadata/` and `targets/`)
+
+**Use cases**:
+- Publishing tuf-on-ci repositories to static hosting (e.g., GitHub Pages)
+- Mirroring tuf-on-ci repositories to OCI registries
+- Creating distribution-ready TUF repositories from tuf-on-ci sources
+
 ## Known Limitations
 
 Due to go-tuf v2 implementation details, tufzy requires:
@@ -210,6 +280,7 @@ Due to go-tuf v2 implementation details, tufzy requires:
 - Repositories using Yubikey/hardware tokens for signing
 - Standard TUF repositories with PEM keys and hex signatures
 - tuf-on-ci repositories (both published and git checkouts)
+- TUF metadata stored in OCI registries (following go-tuf-mirror layout)
 
 ❌ Does NOT work with:
 - tuf-on-ci repositories using Sigstore keyless signing (base64 signatures)
@@ -218,6 +289,7 @@ Due to go-tuf v2 implementation details, tufzy requires:
 **Example working repositories**:
 - Remote standard TUF: https://jku.github.io/tuf-demo/metadata
 - Local tuf-on-ci git: Any local checkout with `metadata/` directory
+- OCI registry: Any registry hosting TUF metadata in go-tuf-mirror format
 
 ## Development
 
