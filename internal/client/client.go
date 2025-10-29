@@ -1,6 +1,7 @@
 package client
 
 import (
+	"context"
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
@@ -73,6 +74,8 @@ type ClientOptions struct {
 	PrefixTargetsWithHash bool
 	// TufOnCiGit enables tuf-on-ci git repository mode (maps versioned to unversioned filenames)
 	TufOnCiGit bool
+	// TargetsURL specifies the targets repository URL (required for OCI)
+	TargetsURL string
 }
 
 // NewClientWithOptions creates a new TUF client with custom options
@@ -91,6 +94,11 @@ func NewClientWithOptions(metadataURL string, options ClientOptions) (*Client, e
 	// Create cache directory
 	if err := os.MkdirAll(cacheDir, 0755); err != nil {
 		return nil, fmt.Errorf("failed to create cache directory: %w", err)
+	}
+
+	// Check if this is an OCI registry URL
+	if isOCI, _, _ := detectOCI(metadataURL, options.TargetsURL); isOCI {
+		return newOCIClient(metadataURL, options.TargetsURL, cacheDir)
 	}
 
 	// Determine if this is a local filesystem path or HTTP URL
@@ -374,4 +382,119 @@ func downloadFile(url, destPath string) error {
 
 	_, err = io.Copy(out, resp.Body)
 	return err
+}
+
+// detectOCI checks if the metadata URL uses the OCI scheme and validates targets URL
+func detectOCI(metadataURL, targetsURL string) (isOCI bool, metadata string, targets string) {
+	if !hasOCIScheme(metadataURL) {
+		return false, "", ""
+	}
+
+	if targetsURL == "" {
+		return true, "", "" // OCI but no targets URL provided (error case)
+	}
+
+	if !hasOCIScheme(targetsURL) {
+		return true, "", "" // OCI but targets not OCI (error case)
+	}
+
+	return true, metadataURL, targetsURL
+}
+
+// hasOCIScheme checks if a URL has the OCI scheme prefix
+func hasOCIScheme(url string) bool {
+	return len(url) >= len(OCIScheme) && url[:len(OCIScheme)] == OCIScheme
+}
+
+// newOCIClient creates a TUF client for OCI registries
+func newOCIClient(metadataURL, targetsURL, cacheDir string) (*Client, error) {
+	if targetsURL == "" {
+		return nil, fmt.Errorf("targets URL is required for OCI repositories")
+	}
+
+	// Create metadata directory in cache
+	metadataDir := filepath.Join(cacheDir, "metadata")
+	if err := os.MkdirAll(metadataDir, 0755); err != nil {
+		return nil, fmt.Errorf("failed to create metadata directory: %w", err)
+	}
+
+	// Download initial root.json if not present (TOFU)
+	rootPath := filepath.Join(metadataDir, "root.json")
+	if _, err := os.Stat(rootPath); os.IsNotExist(err) {
+		// Create a temporary RegistryFetcher just to download the initial root
+		ctx := contextWithTimeout(30 * time.Second)
+		fetcher, err := NewRegistryFetcher(ctx, metadataURL, targetsURL)
+		if err != nil {
+			return nil, fmt.Errorf("failed to create registry fetcher: %w", err)
+		}
+
+		// Try to download 1.root.json
+		rootData, err := fetcher.DownloadFile(metadataURL+"/1.root.json", 512000, 30*time.Second)
+		if err != nil {
+			return nil, fmt.Errorf("failed to download initial root: %w", err)
+		}
+
+		if err := os.WriteFile(rootPath, rootData, 0644); err != nil {
+			return nil, fmt.Errorf("failed to write initial root: %w", err)
+		}
+	}
+
+	// Read trusted root
+	rootBytes, err := os.ReadFile(rootPath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read trusted root: %w", err)
+	}
+
+	// Parse root to detect consistent_snapshot setting
+	var rootData struct {
+		Signed struct {
+			ConsistentSnapshot bool `json:"consistent_snapshot"`
+		} `json:"signed"`
+	}
+	if err := json.Unmarshal(rootBytes, &rootData); err != nil {
+		return nil, fmt.Errorf("failed to parse root metadata: %w", err)
+	}
+
+	// Create updater configuration
+	cfg, err := config.New(metadataURL, rootBytes)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create config: %w", err)
+	}
+
+	// Configure settings
+	cfg.LocalMetadataDir = metadataDir
+	cfg.LocalTargetsDir = filepath.Join(cacheDir, "targets")
+	cfg.RemoteTargetsURL = targetsURL
+	cfg.MaxRootRotations = 32
+	cfg.PrefixTargetsWithHash = rootData.Signed.ConsistentSnapshot
+
+	// Create OCI registry fetcher
+	ctx := contextWithTimeout(30 * time.Second)
+	fetcher, err := NewRegistryFetcher(ctx, metadataURL, targetsURL)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create registry fetcher: %w", err)
+	}
+	cfg.Fetcher = fetcher
+
+	// Create updater
+	tufUpdater, err := updater.New(cfg)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create updater: %w", err)
+	}
+
+	return &Client{
+		updater:            tufUpdater,
+		metadataURL:        metadataURL,
+		targetsURL:         targetsURL,
+		cacheDir:           cacheDir,
+		tufOnCiGit:         false,
+		consistentSnapshot: rootData.Signed.ConsistentSnapshot,
+		hashPrefixes:       rootData.Signed.ConsistentSnapshot,
+	}, nil
+}
+
+// contextWithTimeout creates a context with timeout
+func contextWithTimeout(timeout time.Duration) context.Context {
+	ctx, _ := context.WithTimeout(context.Background(), timeout)
+	return ctx
 }
