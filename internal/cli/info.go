@@ -23,8 +23,11 @@ Example:
 func runInfo(cmd *cobra.Command, args []string) error {
 	metadataURL := args[0]
 
-	// Create TUF client (auto-detects settings)
-	tufClient, err := client.NewClient(metadataURL)
+	// Create TUF client with options
+	options := client.ClientOptions{
+		TargetsURL: targetsURL,
+	}
+	tufClient, err := client.NewClientWithOptions(metadataURL, options)
 	if err != nil {
 		return fmt.Errorf("failed to create client: %w", err)
 	}
