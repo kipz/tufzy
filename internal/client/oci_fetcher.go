@@ -279,10 +279,10 @@ func (d *RegistryFetcher) findFileInManifest(mf []byte, name string) (*v1.Hash, 
 	// determine image or index manifest
 	var layers []Layer
 	switch l.MediaType {
-	case string(types.OCIImageIndex):
+	case string(types.OCIImageIndex), string(types.DockerManifestList):
 		layers = l.Manifests
 		index = true
-	case string(types.OCIManifestSchema1):
+	case string(types.OCIManifestSchema1), string(types.DockerManifestSchema2):
 		layers = l.Layers
 		index = false
 	default:

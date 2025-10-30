@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"github.com/google/go-containerregistry/pkg/crane"
-	v1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/google/go-containerregistry/pkg/v1/empty"
 	"github.com/google/go-containerregistry/pkg/v1/mutate"
 	"github.com/google/go-containerregistry/pkg/v1/static"
@@ -152,18 +151,23 @@ func pushMetadataImage(ctx context.Context, repo, tag string, files map[string][
 	// Add config layer
 	img = mutate.ConfigMediaType(img, types.OCIManifestSchema1)
 
-	// Add each file as a layer
+	// Create layers with annotations
+	adds := []mutate.Addendum{}
 	for filename, content := range files {
 		layer := static.NewLayer(content, TUFMetadataMediaType)
-		var err error
-		img, err = mutate.AppendLayers(img, layer)
-		if err != nil {
-			return fmt.Errorf("failed to append layer: %w", err)
-		}
-		// Add annotation to the layer
-		img = mutate.Annotations(img, map[string]string{
-			TUFFilenameAnnotation: filename,
-		}).(v1.Image)
+		adds = append(adds, mutate.Addendum{
+			Layer: layer,
+			Annotations: map[string]string{
+				TUFFilenameAnnotation: filename,
+			},
+		})
+	}
+
+	// Add all layers at once with their annotations
+	var err error
+	img, err = mutate.Append(img, adds...)
+	if err != nil {
+		return fmt.Errorf("failed to append layers: %w", err)
 	}
 
 	// Push image
@@ -178,16 +182,17 @@ func pushTargetImage(ctx context.Context, repo, filename string, content []byte)
 
 	layer := static.NewLayer(content, TUFTargetMediaType)
 
+	// Add layer with annotation
 	var err error
-	img, err = mutate.AppendLayers(img, layer)
+	img, err = mutate.Append(img, mutate.Addendum{
+		Layer: layer,
+		Annotations: map[string]string{
+			TUFFilenameAnnotation: filename,
+		},
+	})
 	if err != nil {
 		return fmt.Errorf("failed to append layer: %w", err)
 	}
-
-	// Add annotation to the layer
-	img = mutate.Annotations(img, map[string]string{
-		TUFFilenameAnnotation: filename,
-	}).(v1.Image)
 
 	ref := fmt.Sprintf("%s:%s", repo, filename)
 	return crane.Push(img, ref)
