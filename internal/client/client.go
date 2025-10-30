@@ -422,7 +422,8 @@ func newOCIClient(metadataURL, targetsURL, cacheDir string) (*Client, error) {
 	rootPath := filepath.Join(metadataDir, "root.json")
 	if _, err := os.Stat(rootPath); os.IsNotExist(err) {
 		// Create a temporary RegistryFetcher just to download the initial root
-		ctx := contextWithTimeout(30 * time.Second)
+		ctx, cancel := contextWithTimeout(30 * time.Second)
+		defer cancel()
 		fetcher, err := NewRegistryFetcher(ctx, metadataURL, targetsURL)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create registry fetcher: %w", err)
@@ -469,7 +470,8 @@ func newOCIClient(metadataURL, targetsURL, cacheDir string) (*Client, error) {
 	cfg.PrefixTargetsWithHash = rootData.Signed.ConsistentSnapshot
 
 	// Create OCI registry fetcher
-	ctx := contextWithTimeout(30 * time.Second)
+	ctx, cancel := contextWithTimeout(30 * time.Second)
+	defer cancel()
 	fetcher, err := NewRegistryFetcher(ctx, metadataURL, targetsURL)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create registry fetcher: %w", err)
@@ -494,7 +496,7 @@ func newOCIClient(metadataURL, targetsURL, cacheDir string) (*Client, error) {
 }
 
 // contextWithTimeout creates a context with timeout
-func contextWithTimeout(timeout time.Duration) context.Context {
-	ctx, _ := context.WithTimeout(context.Background(), timeout)
-	return ctx
+func contextWithTimeout(timeout time.Duration) (context.Context, context.CancelFunc) {
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	return ctx, cancel
 }

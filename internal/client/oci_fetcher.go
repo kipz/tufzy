@@ -203,7 +203,7 @@ func (d *RegistryFetcher) pullFileLayer(ref string, maxLength int64) ([]byte, er
 }
 
 // getDataFromLayer returns the data from a layer in an image.
-func getDataFromLayer(fileLayer v1.Layer, maxLength int64) ([]byte, error) {
+func getDataFromLayer(fileLayer v1.Layer, maxLength int64) (data []byte, err error) {
 	length, err := fileLayer.Size()
 	if err != nil {
 		return nil, err
@@ -216,9 +216,13 @@ func getDataFromLayer(fileLayer v1.Layer, maxLength int64) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer content.Close()
+	defer func() {
+		if closeErr := content.Close(); closeErr != nil && err == nil {
+			err = closeErr
+		}
+	}()
 
-	data, err := io.ReadAll(io.LimitReader(content, maxLength+1))
+	data, err = io.ReadAll(io.LimitReader(content, maxLength+1))
 	if err != nil {
 		return nil, err
 	}
